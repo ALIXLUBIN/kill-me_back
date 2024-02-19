@@ -15,6 +15,9 @@ $routes->post('character', 'Character::index');
 $routes->resource('character');
 $routes->post('character/(:segment)/buy', 'Character::buy/$1');
 $routes->resource('battle');
+$routes->resource('joinBattle');
+$routes->post('joinBattle/joinAfterWait', 'JoinBattle::joinAfterWait');
+$routes->post('battle/attack/(:segment)', 'Battle::attack/$1');
 
 
 // $routes->resource('photos');

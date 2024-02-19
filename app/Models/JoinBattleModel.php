@@ -3,7 +3,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class BattleModel extends Model
+class JoinBattleModel extends Model
 {
 	protected $table = 'blog';
 	protected $primaryKey = 'id';
@@ -28,27 +28,37 @@ class BattleModel extends Model
 		$query = $this->db->table('battle_queue')
 		->select('battle_queue.character, battle_queue.user')
 		->join('users', 'users.id = battle_queue.user')
-		->where("users.score BETWEEN ($subQuery) - 250 AND ($subQuery) + 250", null, false);
+		->where("users.score BETWEEN ($subQuery) - 250 AND ($subQuery) + 250", null, false)
+		->orderBy('battle_queue.created_at', 'DESC');
 
-		return $query->get()->getResultArray();
+		return $query->get()->getRowArray();
 
 	}
 
-	public function getQueuePlayer($userId) {
+	public function getQueuePlayer($userId, $available = false) {
 		$query = $this->db->table('battle_queue')
-		->select('battle_queue.character, available')
+		->select('battle_queue.character')
 		->where('battle_queue.user', $userId);
 
+		if ($available)
+			$query->where('available' , (string)$available);
+
 		return $query->get()->getResultArray();
 	}
 
-	public function removeFromQueue($userId) {
+		public function removeFromQueue($userId) {
 		$this->db->table('battle_queue')
 		->where('user', $userId)
 		->where('available', '0')
 		->delete();
 
 		return $this->db->affectedRows();
+	}
+
+	public function changeAvabilityOfQueu($userId) {
+		$this->db->table('battle_queue')
+		->whereIn('user', $userId)
+		->update('available', '1');
 	}
 
 	public function initStat($user, $character, $battleId) {
@@ -67,14 +77,14 @@ class BattleModel extends Model
 
 	public function BattleCreat() {
 		$this->db->table('battle')
-		->insert(['current' => '1']);
+		->insert(['current' => '0']);
 
 		return $this->db->insertID();
 	}
 
 	public function getUserStat($userId, $current = true) {
 		$query = $this->db->table('battle')
-		->select('battle.battle_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
+		->select('battle.battle_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield')
 		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
 		->where('battle_player.user_id', $userId);
 
@@ -112,7 +122,13 @@ class BattleModel extends Model
 		->where('battle_id', $battleId)
 		->set($filed, "$filed + $amount", false)
 		->update();
+	}
 
-		
+	public function getUserInBattle($userIds) {
+		$query = $this->db->table('battle_player')
+		->select('user_id')
+		->whereIn('user_id', $userIds);
+
+		return $query->get()->getResultArray();
 	}
 }

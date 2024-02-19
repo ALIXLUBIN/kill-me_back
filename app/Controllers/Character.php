@@ -66,8 +66,8 @@ class Character extends ResourceController
 			return $carry;
 		}, []);
 
-		$charater['attack'] = $attack['attack'] ?? [] ;
-		$charater['spell'] = $attack['spell'] ?? [];
+		$charater['attacks'] = $attack['attack'] ?? [] ;
+		$charater['spells'] = $attack['spell'] ?? [];
 		
     // Retournez la réponse
     return $this->respond($charater);

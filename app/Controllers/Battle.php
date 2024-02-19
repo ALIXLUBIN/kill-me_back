@@ -10,48 +10,82 @@ class Battle extends ResourceController
 	protected $modelName = 'App\Models\BattleModel';
 	protected $format = 'json';
 
-	public function index() {
+	public function index()
+	{
+		// check if user is in game 
+		$self = $this->model->getUserStat($GLOBALS['user_id'], false);
 
-	}
+		// var_dump($self); die;
+		if (!isset($self)) 
+			return $this->failUnauthorized('notInGame');
 
-	public function show($id = null) {
-
-	}
-
-	public function create() {
 		
-		// get the data from the request
-		$data = $this->request->getJSON(true);
 
-		// check if isOwned
-		$characterModel = new CharacterModel();
-		$isOwned = $characterModel->isOwned((int)$data['character_id'], $GLOBALS['user_id']);
+		$game['slef'] = $self;
 
-		// if not owned return error
-		if (count($isOwned) == 0) {
-			return $this->failUnauthorized('You don\'t own this character');
+		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $game['slef']['battle_id']);
+
+		$game['ennemy'] = $ennemy;
+
+		return $this->respond($game);
+	}
+
+	public function attack($id) {
+		
+		// check if user is in game 
+		$self = $this->model->getUserStat($GLOBALS['user_id']);
+		if (!isset($self)) 
+			return $this->failForbidden('notInGame');
+		
+		// check if attack is possible
+		$attack = $this->model->getAttack($id, $self['character_id']);
+		if (!isset($attack))
+			return $this->failForbidden('attackNotPossible');
+
+		// check the required mana
+		if ($self['mana'] < $attack['manaCost'])
+			return $this->failForbidden('notEnoughMana');
+
+		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $self['battle_id']);
+
+		// inflict damage
+		if (isset($attack['damage'])) {
+			$damage = $attack['damage'];
+
+			// add the force multyplyer
+			if (isset($self['strength']))
+			$damage = $damage * (1 + $self['strength'] / 100);
+		
+			// redduce withs the shield
+			if (isset($ennemy['shield'])) {
+
+				if (isset($attack['shieldPiercing'])) {
+					
+					// si le percing est plus grand que le shield pas de chield
+					$shield = 1;
+
+					if (!$ennemy['shield'] < $attack['shieldPiercing'])
+						$shield = 1 - ($ennemy['shield'] - $attack['shieldPiercing']) / 100;
+				} else
+					$shield = 1 - $ennemy['shield'] / 100;
+
+				$damage = $damage * $shield;
+			}
+
+			$damage = round($damage) * -1;
+			$this->model->inflict($damage, 'health', $ennemy['user_id'], $self['battle_id']);
 		}
 
-		// if alraedt in queue
-		$selfInQueue = $this->model->getQueuePlayer($GLOBALS['user_id']);
-		if (count($selfInQueue) != 0)
-			return $this->failUnauthorized('already in queue');
+		// Retrait du mana
+		if (isset($attack['manaCost']))
+			$this->model->inflict( '-' . $attack['manaCost'], 'mana', $self['user_id'], $self['battle_id']);
 
-		// get if the user is in the queue
-		$waitingPlayer = $this->model->getWaitingPlayer($GLOBALS['user_id']);
-		if (count($waitingPlayer) != 0)
-			return $this->respond('find a player');
-			// $this->lunchBattle($data['character_id'], $waitingPlayer[0]['character']);
+		// Soins
+		if (isset($attack['heal']))
+			$this->model->inflict($attack['heal'], 'health', $self['user_id'], $self['battle_id']);
 
-		// add the user to the queue
-		$this->model->addToQueue($data['character_id'], $GLOBALS['user_id']);
-
-		return $this->respond('added to queue');
-
-
-
-
-
-
+		// Réparation du bouclier
+		if (isset($attack['shieldRepair']))
+			$this->model->inflict($attack['shieldRepair'], 'shield', $self['user_id'], $self['battle_id']);
 	}
 }

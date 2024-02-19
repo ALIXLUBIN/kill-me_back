@@ -72,6 +72,12 @@ class Filters extends BaseConfig
      */
     public array $filters = [
         // TODO: Uncomment this line to enable oauthfilter
-        'oauthfilter' => ['before' => ['blog/*', 'blog', 'character', 'character/*', 'battle', 'battle/*']],
+        'oauthfilter' => [
+            'before' => [
+                'blog/*', 'blog',
+                 'character', 'character/*',
+                  'battle', 'battle/*',
+                  'joinBattle', 'joinBattle/*'
+                  ]],
     ];
 }

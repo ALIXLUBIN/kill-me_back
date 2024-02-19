@@ -25,7 +25,7 @@ class User extends ResourceController
 		if ($code != 200)
 			return $this->fail($body, $code);
 
-		setcookie('access_token', $body['access_token'], time() + 3600, '/', '', false, false);
+		setcookie('access_token', $body['access_token'], time() + 3600, '/', '', false, true);
 		
 		$user = $this->model->getUserId($body['access_token']);
 
@@ -80,7 +80,7 @@ class User extends ResourceController
 		$data['id'] = $userId;
 		unset($data['password']);
 
-		return $this->respond(['message' => 'User created', 'data' => $data]);
+		return $this->respond(['messages' => 'User created', 'data' => $data]);
 
 
 		// return $this->respond([
