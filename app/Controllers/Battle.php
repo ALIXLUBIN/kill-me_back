@@ -3,27 +3,52 @@
 namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
-use App\Models\CharacterModel;
+use App\Models\BattleModel;
+use App\Libraries\SocketIo;
 
 class Battle extends ResourceController
 {
 	protected $modelName = 'App\Models\BattleModel';
 	protected $format = 'json';
 
+	private int $battleId;
+	private int $current;
+
+	public function __construct()
+	{
+		$model = new BattleModel();
+		$game = $model->getBattleId($GLOBALS['user_id']);
+		$this->battleId = $game['battle_id'];
+		$this->current = $game['current'];
+	}
+
 	public function index()
 	{
 		// check if user is in game 
-		$self = $this->model->getUserStat($GLOBALS['user_id'], false);
+		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId, false);
 
 		// var_dump($self); die;
 		if (!isset($self)) 
-			return $this->failUnauthorized('notInGame');
+		return $this->failUnauthorized('notInGame');
+	
+		// Add that the user is in the game
+		$remaningPlayers = $this->model->joinGame($GLOBALS['user_id'], $this->battleId);
 
-		
+		if ($this->current == 0 && empty($remaningPlayers)) {
+			// mark the game as current
+			$this->model->setToCurrent($this->battleId);
 
-		$game['slef'] = $self;
+			$playerList = $this->model->playerList($this->battleId);
+			// $socket = new SocketIo;
+			// $socket->createRoom($playerList, $this->battleId);
+		}
 
-		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $game['slef']['battle_id']);
+		$game['battle_id'] = $this->battleId;
+	
+
+		$game['self'] = $self;
+
+		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $game['self']['battle_id']);
 
 		$game['ennemy'] = $ennemy;
 
@@ -33,7 +58,7 @@ class Battle extends ResourceController
 	public function attack($id) {
 		
 		// check if user is in game 
-		$self = $this->model->getUserStat($GLOBALS['user_id']);
+		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId);
 		if (!isset($self)) 
 			return $this->failForbidden('notInGame');
 		
@@ -87,5 +112,21 @@ class Battle extends ResourceController
 		// Réparation du bouclier
 		if (isset($attack['shieldRepair']))
 			$this->model->inflict($attack['shieldRepair'], 'shield', $self['user_id'], $self['battle_id']);
+
+		$stats = $this->getBattleUserStat();
+		$socket = new SocketIo;
+		$socket->sendAttack($id, $this->battleId, $stats);
+	}
+
+	private function getBattleUserStat() {
+
+		$playerList = $this->model->playerList($this->battleId);
+		$stats = [];
+		
+		foreach ($playerList as $key => $value) {
+			$stats[$value['user_id']] = $this->model->getUserStat($value['user_id'], $this->battleId, false);
+		}
+
+		return $stats;
 	}
 }

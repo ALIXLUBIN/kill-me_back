@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\CharacterModel;
+use App\Libraries\SocketIo;
 
 class JoinBattle extends ResourceController
 {
@@ -56,9 +57,16 @@ class JoinBattle extends ResourceController
 				return $player['user'];
 			}, $players);
 
+			$socketIo = new SocketIo();
+
+			
 			// Marquer les joueurs non dispo dans la file
 			$this->model->changeAvabilityOfQueu($userIds);
-	
+			
+			foreach ($userIds as $key => $value) {
+				$socketIo->sendPlayerFound($value);
+			}
+			
 			if (empty($this->model->getUserInBattle($userIds)))
 				$this->failForbidden('Un des joueurs est déja en game CONTATEZ L\'ADMIN !!');
 	

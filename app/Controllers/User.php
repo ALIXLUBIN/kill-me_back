@@ -2,11 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Filters\OauthFilter as FiltersOauthFilter;
 use \App\Libraries\Oauth;
 use \Oauth2\Request;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\UserModel;
+use Filter\OauthFilter;
 
 class User extends ResourceController
 {
@@ -86,5 +88,12 @@ class User extends ResourceController
 		// return $this->respond([
 		//     'message' => 'Create user',
 		// ]);
+	}
+
+	public function validateTocken($tocken) {
+
+		$oauth = new FiltersOauthFilter();
+		
+		return $oauth->verifyToken($tocken);
 	}
 }

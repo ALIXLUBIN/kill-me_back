@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
+use PharIo\Manifest\Library;
+use App\Libraries\SocketIo;
 
 class Character extends ResourceController
 {
@@ -65,6 +67,7 @@ class Character extends ResourceController
 
 			return $carry;
 		}, []);
+
 
 		$charater['attacks'] = $attack['attack'] ?? [] ;
 		$charater['spells'] = $attack['spell'] ?? [];

@@ -19,6 +19,8 @@ $routes->resource('joinBattle');
 $routes->post('joinBattle/joinAfterWait', 'JoinBattle::joinAfterWait');
 $routes->post('battle/attack/(:segment)', 'Battle::attack/$1');
 
+$routes->cli('validateTocken/(:any)', 'User::validateTocken/$1');
+
 
 // $routes->resource('photos');
 // Equivalent to the following:

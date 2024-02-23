@@ -72,11 +72,12 @@ class BattleModel extends Model
 		return $this->db->insertID();
 	}
 
-	public function getUserStat($userId, $current = true) {
-		$query = $this->db->table('battle')
-		->select('battle.battle_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
-		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
-		->where('battle_player.user_id', $userId);
+	public function getUserStat($userId, $battleId, $current = true) {
+		$query = $this->db->table('battle_player')
+		->select('battle.battle_id, battle_player.user_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
+		->join('battle', 'battle_player.battle_id = battle.battle_id')
+		->where('battle_player.user_id', $userId)
+		->where('battle.battle_id', $battleId);
 
 		if ($current)
 			$query->where('battle.current', '1');
@@ -112,7 +113,45 @@ class BattleModel extends Model
 		->where('battle_id', $battleId)
 		->set($filed, "$filed + $amount", false)
 		->update();
+	}
 
-		
+	public function getBattleId($userId) {
+		$query = $this->db->table('battle')
+		->select('battle.battle_id, battle.current')
+		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
+		->where('battle_player.user_id', $userId)
+		->whereIn('battle.current', [1, 0])
+		->orderBy('battle.battle_id', 'ASC');
+
+		return $query->get()->getRowArray();
+	}
+
+	public function joinGame($userId, $battleId) {
+
+		$this->db->table('battle_player')
+		->where('user_id', $userId)
+		->where('battle_id', $battleId)
+		->update(['joined' => 1]);
+
+		$query = $this->db->table('battle_player')
+		->select('user_id')
+		->where('battle_id', $battleId)
+		->where('joined', 0);
+
+		return $query->get()->getResultArray();
+	}
+
+	public function playerList(int $battleId) {
+		$query = $this->db->table('battle_player')
+			->select('user_id')
+			->where('battle_id', $battleId);
+
+		return $query->get()->getResultArray();
+	}
+
+	public function setToCurrent($battleId) {
+		$this->db->table('battle')
+		->where('battle_id', $battleId)
+		->update(['current' => 1]);
 	}
 }

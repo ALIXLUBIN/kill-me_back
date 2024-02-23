@@ -27,8 +27,6 @@ class OauthFilter implements FilterInterface
 
     public function verifyToken($token) {
 
-      // die(var_dump('Bearer ' . $token));
-
       $oauth = new Oauth();
       $request = Request::createFromGlobals();
       if (isset($token))
