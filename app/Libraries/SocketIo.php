@@ -4,7 +4,7 @@ namespace App\Libraries;
 
 use ElephantIO\Client;
 
-class SocketIo	
+class SocketIo
 {
 		public $client;
 

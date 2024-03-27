@@ -6,6 +6,8 @@ use CodeIgniter\RESTful\ResourceController;
 use App\Models\BattleModel;
 use App\Libraries\SocketIo;
 
+use function PHPUnit\Framework\isNull;
+
 class Battle extends ResourceController
 {
 	protected $modelName = 'App\Models\BattleModel';
@@ -18,12 +20,31 @@ class Battle extends ResourceController
 	{
 		$model = new BattleModel();
 		$game = $model->getBattleId($GLOBALS['user_id']);
-		$this->battleId = $game['battle_id'];
-		$this->current = $game['current'];
+
+		if (isset($game)) {
+			$this->battleId = $game['battle_id'];
+			$this->current = $game['current'];
+		}
 	}
 
-	public function index()
+	public function endGame() {
+		return $this->index(2);
+	}
+
+	public function index($segment = 1)
 	{
+
+		if (!isset($this->battleId)) {
+			$game = $this->model->getBattleId($GLOBALS['user_id'], [$segment]);
+
+			if (isset($game)) {
+				$this->battleId = $game['battle_id'];
+				$this->current = $game['current'];
+			} else {
+				return $this->failUnauthorized('notInGame');
+			}
+		}
+
 		// check if user is in game 
 		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId, false);
 
@@ -44,7 +65,7 @@ class Battle extends ResourceController
 		}
 
 		$game['battle_id'] = $this->battleId;
-	
+		$game['current_turn'] = $self['current_turn'];
 
 		$game['self'] = $self;
 
@@ -56,12 +77,16 @@ class Battle extends ResourceController
 	}
 
 	public function attack($id) {
-		
-		// check if user is in game 
+		// check if user is in game
 		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId);
-		if (!isset($self)) 
+
+		if (!isset($self))
 			return $this->failForbidden('notInGame');
-		
+
+		// check if it's the turn of the player
+		if ($self['current_turn'] != $GLOBALS['user_id'])
+			return $this->failForbidden('notYourTurn');
+
 		// check if attack is possible
 		$attack = $this->model->getAttack($id, $self['character_id']);
 		if (!isset($attack))
@@ -73,6 +98,10 @@ class Battle extends ResourceController
 
 		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $self['battle_id']);
 
+		// Changement du tour à faire avant car si non possilbe d'attquer deux fois en théorie
+		$this->model->changeTurn($ennemy['user_id'], $this->battleId);
+		$this->model->updateLastAttack($id, $GLOBALS['user_id'], $this->battleId);
+
 		// inflict damage
 		if (isset($attack['damage'])) {
 			$damage = $attack['damage'];
@@ -80,12 +109,12 @@ class Battle extends ResourceController
 			// add the force multyplyer
 			if (isset($self['strength']))
 			$damage = $damage * (1 + $self['strength'] / 100);
-		
+
 			// redduce withs the shield
 			if (isset($ennemy['shield'])) {
 
 				if (isset($attack['shieldPiercing'])) {
-					
+
 					// si le percing est plus grand que le shield pas de chield
 					$shield = 1;
 
@@ -101,9 +130,14 @@ class Battle extends ResourceController
 			$this->model->inflict($damage, 'health', $ennemy['user_id'], $self['battle_id']);
 		}
 
-		// Retrait du mana
+
+		// Retrait du mana ou ajout du mana
 		if (isset($attack['manaCost']))
 			$this->model->inflict( '-' . $attack['manaCost'], 'mana', $self['user_id'], $self['battle_id']);
+
+		// Rajout du mana
+		if (isset($self['manaRegen']))
+			$this->model->inflict($self['manaRegen'], 'mana', $self['user_id'], $self['battle_id']);
 
 		// Soins
 		if (isset($attack['heal']))
@@ -113,19 +147,36 @@ class Battle extends ResourceController
 		if (isset($attack['shieldRepair']))
 			$this->model->inflict($attack['shieldRepair'], 'shield', $self['user_id'], $self['battle_id']);
 
-		$stats = $this->getBattleUserStat();
+
+		$stats = $this->getBattleUserStat($id);
+
+		// Check si l'adversaire est mort
+		if ($stats[$ennemy['user_id']]['health'] <= 0) {
+
+			$stats[$ennemy['user_id']]['win']  = false;
+			$stats[$GLOBALS['user_id']]['win']  = true;
+
+			// change the status of the game
+			$this->model->endGame($GLOBALS['user_id'], $this->battleId);
+
+			$socket = new SocketIo;
+			$socket->sendAttack($id, $this->battleId, $stats);
+		}
+
 		$socket = new SocketIo;
 		$socket->sendAttack($id, $this->battleId, $stats);
 	}
 
-	private function getBattleUserStat() {
+	private function getBattleUserStat($attackId = null) {
 
 		$playerList = $this->model->playerList($this->battleId);
 		$stats = [];
-		
+
 		foreach ($playerList as $key => $value) {
 			$stats[$value['user_id']] = $this->model->getUserStat($value['user_id'], $this->battleId, false);
 		}
+		if (!isNull($attackId))
+			$stats[$GLOBALS['user_id']]['lastAttack'] = $attackId;
 
 		return $stats;
 	}

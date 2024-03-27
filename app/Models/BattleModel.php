@@ -31,7 +31,6 @@ class BattleModel extends Model
 		->where("users.score BETWEEN ($subQuery) - 250 AND ($subQuery) + 250", null, false);
 
 		return $query->get()->getResultArray();
-
 	}
 
 	public function getQueuePlayer($userId) {
@@ -60,7 +59,7 @@ class BattleModel extends Model
 
 		$defaultStat['user_id'] = $user;
 		$defaultStat['battle_id'] = $battleId;
-	
+
 		$this->db->table('battle_player')
 		->insert($defaultStat);
 	}
@@ -74,8 +73,10 @@ class BattleModel extends Model
 
 	public function getUserStat($userId, $battleId, $current = true) {
 		$query = $this->db->table('battle_player')
-		->select('battle.battle_id, battle_player.user_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
+		->select('users.score, users.nickname, character.manaRegen, battle_player.last_attack, battle.current_turn, battle.battle_id, battle_player.user_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
 		->join('battle', 'battle_player.battle_id = battle.battle_id')
+		->join('character', 'character.id = .battle_player.character_id')
+		->join('users', 'users.id = battle_player.user_id')
 		->where('battle_player.user_id', $userId)
 		->where('battle.battle_id', $battleId);
 
@@ -85,10 +86,10 @@ class BattleModel extends Model
 		return $query->get()->getRowArray();
 	}
 
-	public function getEnnemyStat($userId, $battleId){ 
+	public function getEnnemyStat($userId, $battleId){
 
 		$query = $this->db->table('battle_player')
-		->select('user_id, character_id, health, mana, strength, shield, users.nickname')
+		->select('last_attack, user_id, character_id, health, mana, strength, shield, users.nickname')
 		->join('users', 'users.id = battle_player.user_id')
 		->where('user_id !=', $userId)
 		->where('battle_id', $battleId);
@@ -115,12 +116,12 @@ class BattleModel extends Model
 		->update();
 	}
 
-	public function getBattleId($userId) {
+	public function getBattleId($userId, array $segment = [1, 0]) {
 		$query = $this->db->table('battle')
 		->select('battle.battle_id, battle.current')
 		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
 		->where('battle_player.user_id', $userId)
-		->whereIn('battle.current', [1, 0])
+		->whereIn('battle.current', $segment)
 		->orderBy('battle.battle_id', 'ASC');
 
 		return $query->get()->getRowArray();
@@ -153,5 +154,25 @@ class BattleModel extends Model
 		$this->db->table('battle')
 		->where('battle_id', $battleId)
 		->update(['current' => 1]);
+	}
+
+	public function changeTurn($userId, $battleId) {
+		$this->db->table('battle')
+		->where('battle_id', $battleId)
+		->update(['current_turn' => $userId]);
+
+	}
+
+	public function updateLastAttack($attackId, $userId, $battleId) {
+		$this->db->table('battle_player')
+		->where('user_id', $userId)
+		->where('battle_id', $battleId)
+		->update(['last_attack' => $attackId]);
+	}
+
+	public function endGame($userId, $battleId) {
+		$this->db->table('battle')
+		->where('battle_id', $battleId)
+		->update(['current' => 2, 'winner' => $userId]);
 	}
 }

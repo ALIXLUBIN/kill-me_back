@@ -37,7 +37,7 @@ class JoinBattle extends ResourceController
 		$isOwned = $characterModel->isOwned((int)$data['character_id'], $GLOBALS['user_id']);
 
 		// Si possède pas le perso
-		if (!isset($isOwned)) 
+		if (!isset($isOwned))
 			return $this->failForbidden('Vous ne possédez pas se personnage');
 
 		// Si déja en game
@@ -59,20 +59,20 @@ class JoinBattle extends ResourceController
 
 			$socketIo = new SocketIo();
 
-			
+
 			// Marquer les joueurs non dispo dans la file
 			$this->model->changeAvabilityOfQueu($userIds);
-			
+
 			foreach ($userIds as $key => $value) {
 				$socketIo->sendPlayerFound($value);
 			}
-			
+
 			if (empty($this->model->getUserInBattle($userIds)))
 				$this->failForbidden('Un des joueurs est déja en game CONTATEZ L\'ADMIN !!');
-	
+
 			// Création de la battle
-			$battleId = $this->model->BattleCreat($players);
-	
+			$battleId = $this->model->BattleCreat($userIds);
+
 			foreach ($players as $key => $value) {
 				$this->model->initStat($value['user'], $value['character'], $battleId);
 			}
@@ -84,15 +84,15 @@ class JoinBattle extends ResourceController
 		}
 	}
 
-	public function joinAfterWait() {
+	// public function joinAfterWait() {
 
-		// check if user have found a game
-		if (empty($this->model->getQueuePlayer($GLOBALS['user_id'], true)))
-			return $this->failForbidden('not in a game');
+	// 	// check if user have found a game
+	// 	if (empty($this->model->getQueuePlayer($GLOBALS['user_id'], true)))
+	// 		return $this->failForbidden('not in a game');
 
-		// take oute from queue
-		$this->model->removeFromQueue($GLOBALS['user_id']);
+	// 	// take oute from queue
+	// 	$this->model->removeFromQueue($GLOBALS['user_id']);
 		
-		return $this->respond(['messages' => 'ready']);
-	}
+	// 	return $this->respond(['messages' => 'ready']);
+	// }
 }

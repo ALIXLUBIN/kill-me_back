@@ -14,6 +14,7 @@ $routes->resource('blog');
 $routes->post('character', 'Character::index');
 $routes->resource('character');
 $routes->post('character/(:segment)/buy', 'Character::buy/$1');
+$routes->get('battle/endGame', 'Battle::endGame');
 $routes->resource('battle');
 $routes->resource('joinBattle');
 $routes->post('joinBattle/joinAfterWait', 'JoinBattle::joinAfterWait');

@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App\Models;
 
 use CodeIgniter\Model;
@@ -56,9 +56,13 @@ class JoinBattleModel extends Model
 	}
 
 	public function changeAvabilityOfQueu($userId) {
+		// $this->db->table('battle_queue')
+		// ->whereIn('user', $userId)
+		// ->update('available', '1');
+
 		$this->db->table('battle_queue')
 		->whereIn('user', $userId)
-		->update('available', '1');
+		->delete();
 	}
 
 	public function initStat($user, $character, $battleId) {
@@ -70,14 +74,14 @@ class JoinBattleModel extends Model
 
 		$defaultStat['user_id'] = $user;
 		$defaultStat['battle_id'] = $battleId;
-	
+
 		$this->db->table('battle_player')
 		->insert($defaultStat);
 	}
 
-	public function BattleCreat() {
+	public function BattleCreat($userId) {
 		$this->db->table('battle')
-		->insert(['current' => '0']);
+		->insert(['current' => '0', 'current_turn' => $userId[array_rand($userId)]]);
 
 		return $this->db->insertID();
 	}
@@ -86,6 +90,7 @@ class JoinBattleModel extends Model
 		$query = $this->db->table('battle')
 		->select('battle.battle_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield')
 		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
+		->whereIn('battle.current', [1, 0])
 		->where('battle_player.user_id', $userId);
 
 		if ($current)
