@@ -10,7 +10,6 @@ $routes->post('/user/login', 'User::login');
 $routes->post('/register', 'User::create');
 $routes->options('/(:any)', '');
 // $routes->post('/blog/postes', 'Blog::postes');
-$routes->resource('blog');
 $routes->post('character', 'Character::index');
 $routes->resource('character');
 $routes->post('character/(:segment)/buy', 'Character::buy/$1');
@@ -21,6 +20,10 @@ $routes->post('joinBattle/joinAfterWait', 'JoinBattle::joinAfterWait');
 $routes->post('battle/attack/(:segment)', 'Battle::attack/$1');
 
 $routes->cli('validateTocken/(:any)', 'User::validateTocken/$1');
+
+// Routes d'administration
+
+$routes->resource('admin/character', ['controller' => '\App\Controllers\Admin\Admin_character']);
 
 
 // $routes->resource('photos');

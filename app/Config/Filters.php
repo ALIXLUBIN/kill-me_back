@@ -27,6 +27,7 @@ class Filters extends BaseConfig
         'secureheaders' => SecureHeaders::class,
         'oauthfilter'   => \App\Filters\OauthFilter::class,
         'optionfilter'  => \App\Filters\OptionFilter::class,
+        'adminFilter'   => \App\Filters\AdminFilter::Class,
     ];
 
     /**
@@ -39,6 +40,7 @@ class Filters extends BaseConfig
     public array $globals = [
         'before' => [
             'optionfilter',
+            'oauthfilter' => ['except' => ['user/*', 'register']],
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
@@ -71,13 +73,10 @@ class Filters extends BaseConfig
      * 'isLoggedIn' => ['before' => ['account/*', 'profiles/*']]
      */
     public array $filters = [
-        // TODO: Uncomment this line to enable oauthfilter
-        'oauthfilter' => [
+        'adminFilter' => [
             'before' => [
-                'blog/*', 'blog',
-                 'character', 'character/*',
-                  'battle', 'battle/*',
-                  'joinBattle', 'joinBattle/*'
-                  ]],
+                'admin/*'
+            ]
+        ]
     ];
 }

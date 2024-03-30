@@ -5,8 +5,6 @@ use CodeIgniter\Model;
 
 class BattleModel extends Model
 {
-	protected $table = 'blog';
-	protected $primaryKey = 'id';
 
 	public function addToQueue($characterId, $userId) {
 		$data = [

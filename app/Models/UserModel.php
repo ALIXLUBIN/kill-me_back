@@ -35,11 +35,19 @@ class UserModel extends Model
 	public function getUserId($token)
 	{
 		$builder = $this->db->table('oauth_access_tokens');
-		$builder->select('oauth_access_tokens.user_id, users.nickname, users.score, users.money');
+		$builder->select('oauth_access_tokens.user_id, users.nickname, users.score, users.money, users.scope');
 		$builder->join('users', 'users.id = oauth_access_tokens.user_id');
 		$builder->where('access_token', $token);
 		$query = $builder->get();
 		$result = $query->getRowArray();
 		return $result;
+	}
+
+	public function getScope($userId) {
+		$querry = $this->db->table('users')
+		->select('scope')
+		->where('id', $userId);
+
+		return $querry->get()->getRowArray();
 	}
 }
