@@ -24,6 +24,8 @@ $routes->cli('validateTocken/(:any)', 'User::validateTocken/$1');
 // Routes d'administration
 
 $routes->resource('admin/character', ['controller' => '\App\Controllers\Admin\Admin_character']);
+$routes->resource('admin/attaque', ['controller' => '\App\Controllers\Admin\Admin_attaque']);
+$routes->put('admin/characterAttack/(:segment)', 'Admin\Admin_character::updateCharacterAttack/$1');
 
 
 // $routes->resource('photos');

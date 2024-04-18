@@ -40,7 +40,7 @@ class Filters extends BaseConfig
     public array $globals = [
         'before' => [
             'optionfilter',
-            'oauthfilter' => ['except' => ['user/*', 'register']],
+            'oauthfilter' => ['except' => ['user/*', 'register', 'validateTocken/*']],
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
