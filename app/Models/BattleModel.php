@@ -168,6 +168,27 @@ class BattleModel extends Model
 		->update(['last_attack' => $attackId]);
 	}
 
+	public function updateStat(int $user, int $stat, int $money) {
+		var_dump($user, $stat);
+		$this->db->table('users')
+		->where('id', $user)
+		->set('score', "score + $stat", false)
+		->set('money', "money + $money", false)
+		->update();
+
+		// ->update('score', 'score + ' . $stat, false);
+
+		var_dump($this->db->getLastQuery());
+	}
+
+	public function getUserScoreMoney($id) {
+		$query = $this->db->table('users')
+		->select('score, money')
+		->where('id', $id);
+
+		return $query->get()->getRowArray();
+	}
+
 	public function endGame($userId, $battleId) {
 		$this->db->table('battle')
 		->where('battle_id', $battleId)

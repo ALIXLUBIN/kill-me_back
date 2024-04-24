@@ -28,14 +28,22 @@ class Battle extends ResourceController
 	}
 
 	public function endGame() {
-		return $this->index(2);
+		$return = $this->getBattle([2]);
+
+		$return['user_stat'] = $this->model->getUserScoreMoney($GLOBALS['user_id']);
+
+		return $this->respond($return);
 	}
 
-	public function index($segment = 1)
+	public function index(array $segment = [1, 0])
 	{
+		return $this->respond($this->getBattle($segment));
+	}
 
-		if (!isset($this->battleId)) {
-			$game = $this->model->getBattleId($GLOBALS['user_id'], [$segment]);
+	private function getBattle(array $segment) {
+
+		if (!isset($this->battleId) or $segment != [1, 0]) {
+			$game = $this->model->getBattleId($GLOBALS['user_id'], $segment);
 
 			if (isset($game)) {
 				$this->battleId = $game['battle_id'];
@@ -49,9 +57,9 @@ class Battle extends ResourceController
 		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId, false);
 
 		// var_dump($self); die;
-		if (!isset($self)) 
-		return $this->failUnauthorized('notInGame');
-	
+		if (!isset($self))
+			return $this->failUnauthorized('notInGame');
+
 		// Add that the user is in the game
 		$remaningPlayers = $this->model->joinGame($GLOBALS['user_id'], $this->battleId);
 
@@ -73,7 +81,7 @@ class Battle extends ResourceController
 
 		$game['ennemy'] = $ennemy;
 
-		return $this->respond($game);
+		return $game;
 	}
 
 	public function attack($id) {
@@ -153,11 +161,26 @@ class Battle extends ResourceController
 		// Check si l'adversaire est mort
 		if ($stats[$ennemy['user_id']]['health'] <= 0) {
 
+			$min = 5; // minimum value
+			$max = 15; // maximum value
+			$minusScore = rand($min, $max) * -1;
+
+			$min = 25; // minimum value
+			$max = 35; // maximum value
+			$addScore = rand($min, $max);
+
+			$addMoney = rand(250, 500);
+
 			$stats[$ennemy['user_id']]['win']  = false;
+			$stats[$ennemy['user_id']]['score']  = $minusScore;
 			$stats[$GLOBALS['user_id']]['win']  = true;
+			$stats[$GLOBALS['user_id']]['score']  = $addScore;
 
 			// change the status of the game
 			$this->model->endGame($GLOBALS['user_id'], $this->battleId);
+
+			$this->model->updateStat($GLOBALS['user_id'], $addScore, $addMoney);
+			$this->model->updateStat($ennemy['user_id'], $minusScore, round($addMoney * 0.8));
 
 			$socket = new SocketIo;
 			$socket->sendAttack($id, $this->battleId, $stats);

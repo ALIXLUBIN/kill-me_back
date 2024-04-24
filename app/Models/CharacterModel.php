@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App\Models;
 
 use CodeIgniter\Model;
@@ -11,7 +11,7 @@ class CharacterModel extends Model
 
 		public function getAttack($id) {
 			$query = $this->db->table('attack')
-			->select('attack.id, attack.name, attack.damage, attack.shieldPiercing, attack.manaCost, attack.heal, attack.type')
+			->select('attack.id, attack.name, attack.damage, attack.shieldPiercing, attack.manaCost, attack.heal, attack.type, attack.shieldRepair')
 			->join('character_attack', 'character_attack.attack = attack.id')
 			->where('character_attack.character', $id);
 			// ->where('attack.type', 0);
