@@ -37,10 +37,15 @@ class Battle extends ResourceController
 
 	public function index(array $segment = [1, 0])
 	{
-		return $this->respond($this->getBattle($segment));
+		$return = $this->getBattle($segment);
+		if (!$return['success']) {
+			return $this->failUnauthorized('notInGame');
+		}
+		return $this->respond($return);
 	}
 
 	private function getBattle(array $segment) {
+		$return = ['success' => false];
 
 		if (!isset($this->battleId) or $segment != [1, 0]) {
 			$game = $this->model->getBattleId($GLOBALS['user_id'], $segment);
@@ -49,7 +54,8 @@ class Battle extends ResourceController
 				$this->battleId = $game['battle_id'];
 				$this->current = $game['current'];
 			} else {
-				return $this->failUnauthorized('notInGame');
+				$return['messages'] = 'notInGame';
+				return $return;
 			}
 		}
 
@@ -57,8 +63,10 @@ class Battle extends ResourceController
 		$self = $this->model->getUserStat($GLOBALS['user_id'], $this->battleId, false);
 
 		// var_dump($self); die;
-		if (!isset($self))
-			return $this->failUnauthorized('notInGame');
+		if (!isset($self)) {
+			$return['messages'] = 'notInGame';
+			return $return;
+		}
 
 		// Add that the user is in the game
 		$remaningPlayers = $this->model->joinGame($GLOBALS['user_id'], $this->battleId);
@@ -80,6 +88,7 @@ class Battle extends ResourceController
 		$ennemy = $this->model->getEnnemyStat($GLOBALS['user_id'], $game['self']['battle_id']);
 
 		$game['ennemy'] = $ennemy;
+		$game['success'] = true;
 
 		return $game;
 	}

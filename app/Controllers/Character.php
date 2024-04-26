@@ -20,7 +20,7 @@ class Character extends ResourceController
 			->select('character.*, (user_ownedCharacter.character IS NOT NULL) AS owned')
 			->join('user_ownedCharacter', 'user_ownedCharacter.character = character.id AND user_ownedCharacter.user = '. $GLOBALS['user_id'], 'left')
 			->orderBy('owned', 'DESC')
-			->findAll();	
+			->findAll();
 		}
 		else
 			$data['characters'] = $this->model->findAll();

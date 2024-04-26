@@ -44,21 +44,38 @@ class JoinBattle extends ResourceController
 		if ($this->model->getUserStat($GLOBALS['user_id'], false))
 			return $this->respond(['messages' => 'inGame']);
 
-		// Vérification si joeur correspond dans la file d'attente
-		$founedPlayer = $this->model->getWaitingPlayer($GLOBALS['user_id']);
+		// Vérif que tout les conditon sont remplis type 	adversaire est co tout ça tout ça
+		$toutEstOk = false;
 
-		if (isset($founedPlayer)) {
+		while (!$toutEstOk) {
+
+			// Vérification si joeur correspond dans la file d'attente
+			$founedPlayer = $this->model->getWaitingPlayer($GLOBALS['user_id']);
+
+			if (!isset($founedPlayer)) {
+				// Si pas d'adversaire trouvé
+				$this->model->addToQueue($data['character_id'], $GLOBALS['user_id']);
+				return $this->respond(['messages' => 'waiting']);;
+			}
+
 			// Si adversaire trouvé
+			$socket = new SocketIo;
+			$loggedUsers = json_decode($socket->getLoggedUsers());
+
+			if (!in_array($founedPlayer['user'], $loggedUsers)) {
+				// Si adversaire pas co
+				$this->model->removeFromQueue($founedPlayer['user']);
+				continue;
+			}
 
 			$players[] = ['user' => $founedPlayer['user'], 'character' => $founedPlayer['character']];
 
 			// check if a player is alrady in a game
-			$userIds = array_map(function($player) {
+			$userIds = array_map(function ($player) {
 				return $player['user'];
 			}, $players);
 
 			$socketIo = new SocketIo();
-
 
 			// Marquer les joueurs non dispo dans la file
 			$this->model->changeAvabilityOfQueu($userIds);
@@ -68,7 +85,7 @@ class JoinBattle extends ResourceController
 			}
 
 			if (empty($this->model->getUserInBattle($userIds)))
-				$this->failForbidden('Un des joueurs est déja en game CONTATEZ L\'ADMIN !!');
+			$this->failForbidden('Un des joueurs est déja en game CONTATEZ L\'ADMIN !!');
 
 			// Création de la battle
 			$battleId = $this->model->BattleCreat($userIds);
@@ -77,11 +94,50 @@ class JoinBattle extends ResourceController
 				$this->model->initStat($value['user'], $value['character'], $battleId);
 			}
 			return $this->respond(['messages' => 'battle_created']);
-		} else {
-			// Si pas d'adversaire trouvé
-			$this->model->addToQueue($data['character_id'], $GLOBALS['user_id']);
-			return $this->respond(['messages' => 'waiting']);
+			$toutEstOk = true;
 		}
+
+
+
+		// if (isset($founedPlayer)) {
+		// 	// Si adversaire trouvé
+
+		// 	// Verif si le joueur est co sur le socket
+		// 	$socket = new SocketIo;
+		// 	$socket->getLoggedUsers();
+
+
+		// 	$players[] = ['user' => $founedPlayer['user'], 'character' => $founedPlayer['character']];
+
+		// 	// check if a player is alrady in a game
+		// 	$userIds = array_map(function($player) {
+		// 		return $player['user'];
+		// 	}, $players);
+
+		// 	$socketIo = new SocketIo();
+
+		// 	// Marquer les joueurs non dispo dans la file
+		// 	$this->model->changeAvabilityOfQueu($userIds);
+
+		// 	foreach ($userIds as $key => $value) {
+		// 		$socketIo->sendPlayerFound($value);
+		// 	}
+
+		// 	if (empty($this->model->getUserInBattle($userIds)))
+		// 		$this->failForbidden('Un des joueurs est déja en game CONTATEZ L\'ADMIN !!');
+
+		// 	// Création de la battle
+		// 	$battleId = $this->model->BattleCreat($userIds);
+
+		// 	foreach ($players as $key => $value) {
+		// 		$this->model->initStat($value['user'], $value['character'], $battleId);
+		// 	}
+		// 	return $this->respond(['messages' => 'battle_created']);
+		// } else {
+		// 	// Si pas d'adversaire trouvé
+		// 	$this->model->addToQueue($data['character_id'], $GLOBALS['user_id']);
+		// 	return $this->respond(['messages' => 'waiting']);
+		// }
 	}
 
 	// public function joinAfterWait() {
