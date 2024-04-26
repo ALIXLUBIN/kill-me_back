@@ -176,9 +176,7 @@ class BattleModel extends Model
 		->set('money', "money + $money", false)
 		->update();
 
-		// ->update('score', 'score + ' . $stat, false);
-
-		var_dump($this->db->getLastQuery());
+		// var_dump($this->db->getLastQuery());
 	}
 
 	public function getUserScoreMoney($id) {
