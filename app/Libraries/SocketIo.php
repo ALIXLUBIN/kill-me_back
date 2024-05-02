@@ -35,7 +35,7 @@ class SocketIo
 
 		$this->client = Client::create($url, $options);
 		$this->client->connect();
-		$this->client->of('/socket.io'); // can be omitted if connecting to default namespace
+		$this->client->of('/socket.io');
 
 	}
 

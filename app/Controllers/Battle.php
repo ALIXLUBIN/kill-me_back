@@ -153,16 +153,28 @@ class Battle extends ResourceController
 			$this->model->inflict( '-' . $attack['manaCost'], 'mana', $self['user_id'], $self['battle_id']);
 
 		// Rajout du mana
-		if (isset($self['manaRegen']))
+		if (isset($self['manaRegen'])) {
+			if ($self['mana'] + $self['manaRegen'] > $self['maxMana'])
+				$this->model->inflict($self['maxMana'] - $self['mana'], 'mana', $self['user_id'], $self['battle_id']);
+			else
 			$this->model->inflict($self['manaRegen'], 'mana', $self['user_id'], $self['battle_id']);
+		}
 
 		// Soins
-		if (isset($attack['heal']))
-			$this->model->inflict($attack['heal'], 'health', $self['user_id'], $self['battle_id']);
+		if (isset($attack['heal'])) {
+			if ($self['health'] + $attack['heal'] > $self['maxHealth'])
+				$this->model->inflict($self['maxHealth'] - $self['health'], 'health', $self['user_id'], $self['battle_id']);
+			else
+				$this->model->inflict($attack['heal'], 'health', $self['user_id'], $self['battle_id']);
+		}
 
 		// Réparation du bouclier
-		if (isset($attack['shieldRepair']))
-			$this->model->inflict($attack['shieldRepair'], 'shield', $self['user_id'], $self['battle_id']);
+		if (isset($attack['shieldRepair'])) {
+			if ($self['shield'] + $attack['shieldRepair'] > $self['maxShield'])
+				$this->model->inflict($self['maxShield'] - $self['shield'], 'shield', $self['user_id'], $self['battle_id']);
+			else
+				$this->model->inflict($attack['shieldRepair'], 'shield', $self['user_id'], $self['battle_id']);
+		}
 
 
 		$stats = $this->getBattleUserStat($id);

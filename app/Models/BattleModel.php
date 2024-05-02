@@ -71,7 +71,7 @@ class BattleModel extends Model
 
 	public function getUserStat($userId, $battleId, $current = true) {
 		$query = $this->db->table('battle_player')
-		->select('users.score, users.nickname, character.manaRegen, battle_player.last_attack, battle.current_turn, battle.battle_id, battle_player.user_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
+		->select('users.score, users.nickname, character.manaRegen, character.maxMana, character.maxHealth, character.maxStrength, character.maxShield, battle_player.last_attack, battle.current_turn, battle.battle_id, battle_player.user_id, battle_player.character_id, battle_player.health, battle_player.mana, battle_player.strength, battle_player.shield, battle.current')
 		->join('battle', 'battle_player.battle_id = battle.battle_id')
 		->join('character', 'character.id = .battle_player.character_id')
 		->join('users', 'users.id = battle_player.user_id')
@@ -120,7 +120,7 @@ class BattleModel extends Model
 		->join('battle_player', 'battle_player.battle_id = battle.battle_id')
 		->where('battle_player.user_id', $userId)
 		->whereIn('battle.current', $segment)
-		->orderBy('battle.battle_id', 'ASC');
+		->orderBy('battle.battle_id', 'DESC');
 
 		return $query->get()->getRowArray();
 	}
